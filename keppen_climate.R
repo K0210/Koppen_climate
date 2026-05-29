@@ -35,9 +35,28 @@ get_kubun <- function(df) {
   df_sm_min_rain <- min(df_sm$月平均降水量平年値)
   df_wn_min_rain <- min(df_wn$月平均降水量平年値)
   df_sm_max_rain <- max(df_sm$月平均降水量平年値)
-  df_wn_max_rain <- max(df_wn$月平均降水量平年値)
+  df_wn_max_rain <- max(df_wn$月平均降水量平年値) 
+
+  # 乾燥限界判定の前に必要
+  ratio <- rain_year / rain_summer
+  if (ratio > 0.3) { 
+    dry_pattern == 's'
+  } else if (ratio < 0.7){
+    dry_pattern == 'w'
+  } else {
+    dry_pattern == 'f'
+  }
+
   
-  # 温帯と冷帯の乾季の判定 (乾燥限界判定の前に必要)
+  # 乾燥限界の計算 (dry_patternに依存)
+  r <- case_when(
+    dry_pattern == 's' ~ 20 * ave_temp,
+    dry_pattern == 'f' ~ 20 * (ave_temp + 7),
+    dry_pattern == 'w' ~ 20 * (ave_temp + 14),
+    TRUE ~ stop('乾燥限界の判定パターンが不正です')
+  )
+
+    # 温帯と冷帯の乾季の判定 
   if ((df_sm_min_rain < df_wn_min_rain) & (3 * df_sm_min_rain < df_wn_max_rain) & (min_rain < 40)) {
     dry_season <- 's'
   } else if ((df_sm_min_rain > df_wn_min_rain) & (10 * df_wn_min_rain < df_sm_max_rain)) {
@@ -45,14 +64,6 @@ get_kubun <- function(df) {
   } else {
     dry_season <- 'f'
   }
-  
-  # 乾燥限界の計算 (dry_seasonに依存)
-  r <- case_when(
-    dry_season == 's' ~ 20 * ave_temp,
-    dry_season == 'f' ~ 20 * (ave_temp + 7),
-    dry_season == 'w' ~ 20 * (ave_temp + 14),
-    TRUE ~ stop('乾燥限界の判定パターンが不正です')
-  )
   
   # 気温による小分類
   temp_pattern <- if (max_temp >= 22) 'a'
